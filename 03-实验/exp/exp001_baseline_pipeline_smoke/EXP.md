@@ -65,16 +65,23 @@ screen -dmS crops384 bash -lc 'cd /root/autodl-tmp/projects/ancient-script-fewsh
 | smoke crops | 100 |
 | smoke crop errors | 3 |
 | smoke output size | 14 MB |
-| full crops | 生成中 |
-| full crop errors | 生成中 |
+| full crops | 46,428 |
+| full crop errors | 14,820 |
+| invalid labels | 23 |
+| full output size | 约 3.8 GB |
+| unique labels | 3,530 |
+| singleton labels | 1,757 |
+| multi-codepoint labels | 532 |
 
 ---
 
 ## 7. 结论
 
-**Verdict：Pending**
+**Verdict：Positive**
 
-smoke 结果显示裁剪链路可用，`--max-side 384` 能把中间数据体积从原始 crop 的约 63 MB/100 张降到约 14 MB/100 张。等待全量裁剪完成后补最终统计。
+裁剪链路可用，已生成第一版 baseline 输入数据集。`--max-side 384` 能把中间数据体积控制在约 3.8 GB，适合后续训练读取。
+
+需要注意：14,820 个标注框裁剪失败，均为 `invalid bbox from points`。复查发现绝大多数失败框在 direct、顺时针、逆时针三种坐标映射下都无法得到有效 bbox，初步判断不是简单旋转规则问题，而是原始标注坐标落在当前图片外或图片版本不匹配。第一版模型先使用 46,428 张成功 crop，坏框后续再作为数据清洗专题处理。
 
 ---
 
@@ -85,4 +92,5 @@ smoke 结果显示裁剪链路可用，`--max-side 384` 能把中间数据体积
 | smoke 数据 | `/root/autodl-tmp/datasets/processed/char_crops_smoke_v3_384` |
 | full 数据 | `/root/autodl-tmp/datasets/processed/char_crops_384` |
 | full 日志 | `/root/autodl-tmp/datasets/processed/char_crops_384.log` |
+| 类别统计 | `/root/autodl-tmp/datasets/processed/char_crops_384/stats` |
 | contact sheet | `/root/autodl-tmp/datasets/char_crops_smoke_v3_384_contact.jpg` |

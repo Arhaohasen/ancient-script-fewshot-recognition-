@@ -14,9 +14,9 @@
 
 ## 2026-05-21 — exp001_baseline_pipeline_smoke
 
-**Verdict：Pending**
+**Verdict：Positive**
 
-已跑通 100 张单字裁剪 smoke：`--max-side 384` 版本成功写出 100 张 crop，记录 3 个坏框，输出约 14 MB。全量裁剪任务已在 AutoDL 后台运行，目标产物是 `/root/autodl-tmp/datasets/processed/char_crops_384`。
+已完成第一版单字裁剪数据集：`--max-side 384` 版本写出 46,428 张成功 crop，输出约 3.8 GB，可作为监督分类 baseline 的默认输入。
 
 ### 设置
 
@@ -27,18 +27,20 @@
 
 ### 结果
 
-- 本地指标：13 个数据处理单元测试通过
+- 本地指标：15 个数据处理单元测试通过
 - 线上分数：无
 - 训练现象：无
+- 数据产物：46,428 crops，3,530 类，1,757 个单样本类别
+- 异常：23 个无效标签，14,820 个裁剪失败框
 
 ### 解释
 
-- 裁剪链路可行，但部分原始 bbox 会映射到图片外，当前先记录到 `errors.jsonl` 并跳过。
+- 裁剪链路可行，但 14,820 个原始 bbox 会映射到图片外，当前先记录到 `errors.jsonl` 并跳过。
+- 复查失败框后，14,777 个在 direct、顺时针、逆时针三种坐标映射下都无法得到有效 bbox，初步判断不是简单旋转规则问题。
 - 384 crop 比原始 crop 更省磁盘和 I/O，适合作为第一版监督分类 baseline 的输入。
 
 ### 下一步
 
-- 等待全量 crop 完成后补 `summary.jsonl` 统计。
 - 基于 `manifest.jsonl` 做类别长尾统计和验证集切分。
 - 启动 ResNet/ConvNeXt 监督分类 smoke。
 

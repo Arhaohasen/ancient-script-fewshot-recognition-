@@ -8,7 +8,7 @@
 
 ## 0. 一句话现状
 
-**2026-05-21 02:57**：项目骨架和数据处理代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已创建，100 张 `--max-side 384` crop smoke 通过，全量 `/root/autodl-tmp/datasets/processed/char_crops_384` 正在 AutoDL `screen` 会话 `crops384` 后台生成。
+**2026-05-21 03:36**：项目骨架和数据处理代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop、3,530 类，另有 14,820 个坏框写入 `errors.jsonl`。下一步是验证集切分和监督分类 baseline。
 
 ---
 
@@ -57,7 +57,7 @@
 | 阻塞项 | 状态 | 下一步 |
 |---|---|---|
 | 训练数据 | 已下载并解压 | 保留原始压缩包，使用 `/root/autodl-tmp/datasets/train/` |
-| 数据格式 | 已完成首轮统计 | 等全量 crop 完成后补最终 `summary.jsonl` 和类别长尾统计 |
+| 数据格式 | 已完成首轮统计 | 使用 `char_crops_384` 跑 baseline，坏框后续再清洗 |
 | 评价指标 | 待确认 | 从赛题页面或提交反馈确认 |
 | 提交格式 | 待确认 | 补 `00-赛题资料/提交流程.md` |
 
@@ -102,8 +102,7 @@ expNNN_{stage}_{method}_{shortname}/
 
 ## 7. 下一次开工清单
 
-1. 查看 AutoDL 全量 crop 任务状态：`screen -ls`，输出目录 `/root/autodl-tmp/datasets/processed/char_crops_384`。
-2. full crop 完成后运行 `ancient_ocr.data.summarize_manifest`，生成类别长尾统计。
-3. 更新 `00-赛题资料/数据说明.md`、`03-实验/exp/exp001_baseline_pipeline_smoke/EXP.md`、`JOURNAL.md` 和 `runs.jsonl` 的最终数字。
-4. 基于 `manifest.jsonl` 做验证集切分策略。
-5. 启动 `exp002_supervised_resnet50_aug` 或同等级监督分类 smoke。
+1. 基于 `/root/autodl-tmp/datasets/processed/char_crops_384/manifest.jsonl` 做验证集切分策略。
+2. 创建 `exp002_supervised_resnet50_aug` 或同等级监督分类 smoke。
+3. 跑通训练、验证、推理和提交文件生成。
+4. 单独分析 14,820 个坏框是否能通过图片版本、坐标系或标注规则修复。
