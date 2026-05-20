@@ -25,8 +25,12 @@ def find_image_for_xml(xml_path: Path) -> Path | None:
     return None
 
 
+def _char_id(index: int, attrs: dict[str, str]) -> str:
+    return attrs.get("id") or attrs.get("no") or str(index)
+
+
 def _safe_char_id(xml_path: Path, index: int, attrs: dict[str, str]) -> str:
-    char_id = attrs.get("id") or attrs.get("no") or str(index)
+    char_id = _char_id(index, attrs)
     keep = []
     for char in char_id:
         if char.isalnum() or char in {"-", "_"}:
@@ -34,6 +38,22 @@ def _safe_char_id(xml_path: Path, index: int, attrs: dict[str, str]) -> str:
         else:
             keep.append("_")
     return f"{xml_path.stem}_{''.join(keep)}"
+
+
+def _resize_to_max_side(image: Image.Image, max_side: int | None) -> Image.Image:
+    if max_side is None:
+        return image
+    if max_side <= 0:
+        raise ValueError("max_side must be positive")
+
+    width, height = image.size
+    longest_side = max(width, height)
+    if longest_side <= max_side:
+        return image
+
+    scale = max_side / longest_side
+    size = (max(1, round(width * scale)), max(1, round(height * scale)))
+    return image.resize(size, Image.Resampling.LANCZOS)
 
 
 def _write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
@@ -48,6 +68,7 @@ def extract_crops(
     output_dir: str | Path,
     padding: int = 16,
     limit: int | None = None,
+    max_side: int | None = None,
 ) -> dict[str, int]:
     data_root = Path(data_root)
     output_dir = Path(output_dir)
@@ -57,6 +78,7 @@ def extract_crops(
     Image.MAX_IMAGE_PIXELS = None
 
     records: list[dict[str, Any]] = []
+    error_records: list[dict[str, Any]] = []
     summary = {
         "xml_files": 0,
         "missing_images": 0,
@@ -92,11 +114,24 @@ def extract_crops(
                         padding=padding,
                     )
                     crop = image.crop(bbox)
+                    crop = _resize_to_max_side(crop, max_side)
                     crop_name = f"{_safe_char_id(xml_path, index, char.attrs)}.png"
                     crop_path = crop_dir / crop_name
                     crop.save(crop_path)
-                except Exception:
+                except Exception as exc:
                     summary["crop_errors"] += 1
+                    error_records.append(
+                        {
+                            "xml_path": str(xml_path.relative_to(data_root)),
+                            "image_path": str(image_path.relative_to(data_root)),
+                            "char_id": _char_id(index, char.attrs),
+                            "label": char.label,
+                            "label_codepoints": label_codepoints(char.label or ""),
+                            "xml_size": list(page.xml_size),
+                            "image_size": list(image_size),
+                            "error": str(exc),
+                        }
+                    )
                     continue
 
                 records.append(
@@ -109,11 +144,13 @@ def extract_crops(
                         "bbox": list(bbox),
                         "xml_size": list(page.xml_size),
                         "image_size": list(image_size),
+                        "crop_size": list(crop.size),
                     }
                 )
                 summary["crops_written"] += 1
 
     _write_jsonl(output_dir / "manifest.jsonl", records)
+    _write_jsonl(output_dir / "errors.jsonl", error_records)
     _write_jsonl(output_dir / "summary.jsonl", [summary])
     return summary
 
@@ -124,6 +161,12 @@ def main() -> None:
     parser.add_argument("--output-dir", required=True, help="Directory for crops and manifest.jsonl.")
     parser.add_argument("--padding", type=int, default=16, help="Padding around each XML bbox in pixels.")
     parser.add_argument("--limit", type=int, default=None, help="Optional max number of crops to write.")
+    parser.add_argument(
+        "--max-side",
+        type=int,
+        default=None,
+        help="Optional maximum output crop side length, preserving aspect ratio.",
+    )
     args = parser.parse_args()
 
     summary = extract_crops(
@@ -131,6 +174,7 @@ def main() -> None:
         output_dir=args.output_dir,
         padding=args.padding,
         limit=args.limit,
+        max_side=args.max_side,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
