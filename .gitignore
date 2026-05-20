@@ -12,9 +12,9 @@ venv/
 *.tar.gz
 *.zip
 *.7z
-data/
-raw/
-processed/
+/data/
+/raw/
+/processed/
 
 # Experiments
 03-实验/exp/**/logs/
