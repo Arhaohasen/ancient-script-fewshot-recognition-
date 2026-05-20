@@ -33,6 +33,12 @@ class XmlCropTests(unittest.TestCase):
             [(10.0, 20.0), (30.0, 40.0), (50.0, 60.0)],
         )
 
+    def test_parses_rectangle_position_points(self):
+        self.assertEqual(
+            parse_position("10,20,30,40"),
+            [(10.0, 20.0), (30.0, 20.0), (30.0, 40.0), (10.0, 40.0)],
+        )
+
     def test_scales_xml_bbox_to_image_coordinates(self):
         points = [(10.0, 20.0), (30.0, 40.0)]
         bbox = bbox_from_points(

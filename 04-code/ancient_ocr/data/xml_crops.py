@@ -35,6 +35,12 @@ def is_valid_label(label: str | None) -> bool:
 
 
 def parse_position(position: str) -> list[tuple[float, float]]:
+    if ";" not in position:
+        values = [float(value.strip()) for value in position.split(",") if value.strip()]
+        if len(values) == 4:
+            left, top, right, bottom = values
+            return [(left, top), (right, top), (right, bottom), (left, bottom)]
+
     points: list[tuple[float, float]] = []
     for pair in position.split(";"):
         pair = pair.strip()
