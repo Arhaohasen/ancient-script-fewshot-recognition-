@@ -8,7 +8,7 @@
 
 ## 0. 一句话现状
 
-**2026-05-21**：项目骨架已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载到 AutoDL 数据盘，大小 39,269,209,064 bytes（约 37 GiB），下一步是解压、统计数据结构，并创建 `exp001_baseline_pipeline_smoke`。
+**2026-05-21 02:57**：项目骨架和数据处理代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已创建，100 张 `--max-side 384` crop smoke 通过，全量 `/root/autodl-tmp/datasets/processed/char_crops_384` 正在 AutoDL `screen` 会话 `crops384` 后台生成。
 
 ---
 
@@ -56,8 +56,8 @@
 
 | 阻塞项 | 状态 | 下一步 |
 |---|---|---|
-| 训练数据 | 已下载 | 在 AutoDL 解压 `train.tar`，保留原始压缩包 |
-| 数据格式 | 待确认 | 解压后补 `00-赛题资料/数据说明.md` |
+| 训练数据 | 已下载并解压 | 保留原始压缩包，使用 `/root/autodl-tmp/datasets/train/` |
+| 数据格式 | 已完成首轮统计 | 等全量 crop 完成后补最终 `summary.jsonl` 和类别长尾统计 |
 | 评价指标 | 待确认 | 从赛题页面或提交反馈确认 |
 | 提交格式 | 待确认 | 补 `00-赛题资料/提交流程.md` |
 
@@ -102,8 +102,8 @@ expNNN_{stage}_{method}_{shortname}/
 
 ## 7. 下一次开工清单
 
-1. 在 AutoDL 解压 `/root/autodl-tmp/datasets/train.tar` 到 `/root/autodl-tmp/datasets/train/`。
-2. 统计目录树、图片数量、XML 数量、类别数、标签异常值数量。
-3. 抽样 20 个样本，确认图片格式、标签格式、类别数、每类样本数。
-4. 写 `00-赛题资料/数据说明.md` 第一版。
-5. 创建 `exp001_baseline_pipeline_smoke`。
+1. 查看 AutoDL 全量 crop 任务状态：`screen -ls`，输出目录 `/root/autodl-tmp/datasets/processed/char_crops_384`。
+2. full crop 完成后运行 `ancient_ocr.data.summarize_manifest`，生成类别长尾统计。
+3. 更新 `00-赛题资料/数据说明.md`、`03-实验/exp/exp001_baseline_pipeline_smoke/EXP.md`、`JOURNAL.md` 和 `runs.jsonl` 的最终数字。
+4. 基于 `manifest.jsonl` 做验证集切分策略。
+5. 启动 `exp002_supervised_resnet50_aug` 或同等级监督分类 smoke。
