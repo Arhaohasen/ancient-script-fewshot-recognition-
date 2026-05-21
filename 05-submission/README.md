@@ -26,13 +26,15 @@
 
 当前 Dockerfile 使用 PyTorch CUDA 12.4 runtime 基础镜像，适配赛方 V100 + CUDA 12.4 环境。
 
-在 AutoDL 仓库根目录执行：
+在有 Docker 的构建环境执行：
 
 ```bash
 mkdir -p models
 cp /root/autodl-tmp/runs/exp002_supervised_resnet50_imagenet_filtered_full/best.pt models/best.pt
 docker build -t ancient-script-submit:exp002 .
 ```
+
+截至 2026-05-22，当前 AutoDL 训练容器内没有 `docker` 命令；若继续用这台训练机，需要把仓库和 `models/best.pt` 交给 Tianchi/阿里云镜像构建器或另一台有 Docker 的机器构建。
 
 本地或 AutoDL smoke：
 
