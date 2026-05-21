@@ -84,6 +84,44 @@
 
 ---
 
+## 2026-05-22 — exp002_online_submission
+
+**Verdict：Negative but informative**
+
+第一版 Docker 镜像完整跑通线上提交，但 F1 只有 0.000508。主要失败原因不是提交链路，而是传统连通域检测候选框过多：线上输出 110,892 个预测字符，而 GT 只有 11,163 个字符，FP 达到 110,861。
+
+### 设置
+
+- 镜像：`crpi-zu9shlvlgvipgjet.cn-hangzhou.personal.cr.aliyuncs.com/ancient-script/ancient-script-submit:exp002`
+- 检测：传统前景连通域，每图最多 128 个候选框
+- 识别：exp002 ImageNet ResNet50 filtered checkpoint
+- 输入：赛方初赛评测集，1103 张图片
+
+### 结果
+
+- 线上 F1：0.000508
+- TP：31
+- FP：110861
+- FN：11132
+- Precision：0.00028
+- Recall：0.002777
+- total_gt_chars：11163
+- total_pred_chars：110892
+
+### 解释
+
+- 真实平均每图约 10 个字符，我们平均每图预测约 100 个字符，FP 数量级错误。
+- 前排方案预测框数量大致接近 GT 数量级；当前检测器把大量噪声/碎片当作字符。
+- 当前首要问题是检测候选框质量和数量控制，不是继续盲目提升分类器。
+
+### 下一步
+
+- 在训练集 XML 上建立检测器本地评估，按 IoU >= 0.5 统计检测 recall/precision。
+- 调 `max_boxes`、面积阈值、长宽比、NMS 和排序，让每图预测数量先接近 10-16。
+- 若传统检测仍不行，切 PaddleOCR/DB 检测器或训练轻量检测头。
+
+---
+
 ## 日志模板
 
 ```markdown
