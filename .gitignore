@@ -23,6 +23,11 @@ venv/
 03-实验/exp/**/*.pth
 03-实验/exp/**/*.ckpt
 
+# Model files copied into Docker build context locally
+/models/*.pt
+/models/*.pth
+/models/*.ckpt
+
 # Submissions
 05-submission/submissions/*.zip
 

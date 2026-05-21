@@ -1,6 +1,6 @@
 # 少样本跨域古文字识别比赛
 
-> **当前状态（2026-05-10）**：项目骨架已建立，优先目标是先读懂赛题与数据，再用一个可提交的 baseline 跑通完整流程。
+> **当前状态（2026-05-22）**：数据已解压统计，`exp002_supervised_resnet50_aug` 已有 ResNet50 checkpoint，推理入口已按赛方 schema 输出 `/saisresult/prediction.json`。当前优先目标是构建并 smoke 可提交 Docker 镜像。
 >
 > **新会话开工先读**：`AGENTS.md`（项目长期记忆）→ `00-赛题资料/赛题分析.md` → `00-赛题资料/数据说明.md` → `03-实验/JOURNAL.md`。
 
@@ -55,6 +55,6 @@
 
 ## 下一步
 
-1. 下载并校验赛方 `train.tar`。
-2. 补全 `00-赛题资料/数据说明.md`：目录结构、标签格式、样本示例、提交格式。
-3. 建立 `exp001_baseline_pipeline`，目标不是高分，而是先跑通端到端流程。
+1. 将 `/root/autodl-tmp/runs/exp002_supervised_resnet50_imagenet_filtered_full/best.pt` 复制为 `models/best.pt`。
+2. 构建 `ancient-script-submit:exp002` Docker 镜像并用 `/saisdata/13/eval/images/` 结构 smoke。
+3. 若镜像链路无误，提交一次流程 baseline；随后再优化检测器和识别模型。

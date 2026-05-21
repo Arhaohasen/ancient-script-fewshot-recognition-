@@ -7,6 +7,7 @@
 - `/app/run.sh`：运行入口；
 - `/saisdata`：输入数据目录；
 - `/saisresult/prediction.json`：固定输出文件；
+- `models/best.pt`：构建镜像前复制到仓库根目录下的模型权重，不进 git；
 - 截止时间：2026-05-27 14:00:00。
 
 ---
@@ -18,6 +19,38 @@
 ├── README.md
 └── submissions/
 ```
+
+---
+
+## 镜像构建 SOP
+
+当前 Dockerfile 使用 PyTorch CUDA 12.4 runtime 基础镜像，适配赛方 V100 + CUDA 12.4 环境。
+
+在 AutoDL 仓库根目录执行：
+
+```bash
+mkdir -p models
+cp /root/autodl-tmp/runs/exp002_supervised_resnet50_imagenet_filtered_full/best.pt models/best.pt
+docker build -t ancient-script-submit:exp002 .
+```
+
+本地或 AutoDL smoke：
+
+```bash
+mkdir -p /tmp/saisresult_docker
+docker run --rm --gpus all \
+  -v /path/to/saisdata:/saisdata:ro \
+  -v /tmp/saisresult_docker:/saisresult \
+  ancient-script-submit:exp002
+```
+
+验证输出：
+
+```bash
+python -m json.tool /tmp/saisresult_docker/prediction.json >/dev/null
+```
+
+注意：`models/best.pt` 会进入 Docker 镜像，但不会提交到 git。
 
 ---
 

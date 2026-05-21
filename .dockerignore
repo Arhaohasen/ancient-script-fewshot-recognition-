@@ -1,0 +1,29 @@
+.git/
+__pycache__/
+*.py[cod]
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Large local data and archives
+*.tar
+*.tar.gz
+*.zip
+*.7z
+data/
+raw/
+processed/
+
+# Experiment outputs are tracked through docs, not copied into images.
+03-实验/exp/**/logs/
+03-实验/exp/**/ckpt/
+03-实验/exp/**/*.pt
+03-实验/exp/**/*.pth
+03-实验/exp/**/*.ckpt
+
+# Keep the Docker context small. The actual submission image only needs
+# source code, run.sh, requirements.txt, and models/best.pt.
+05-submission/submissions/

@@ -8,7 +8,7 @@
 
 ## 0. 一句话现状
 
-**2026-05-22**：项目骨架和数据处理/训练/推理入口代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop。`exp002_supervised_resnet50_aug` 已跑通：过滤 `ZHFD-...` 等占位标签后，ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.18% top-1 accuracy。提交 schema 已确认：从 `/saisdata/13/eval/images/{图片ID}.png` 读取，输出 `/saisresult/prediction.json`，结构为 `{image_id: [{"bbox": [x,y,w,h], "text": "字"}]}`。AutoDL `/app` 已更新新版推理入口，并用正式目录结构 + 真实整页训练图做过 smoke，能输出 bbox/text 列表。当前检测器是传统前景连通域 baseline，下一步应优化检测或接入 PaddleOCR/DB 检测器。
+**2026-05-22**：项目骨架和数据处理/训练/推理入口代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop。`exp002_supervised_resnet50_aug` 已跑通：过滤 `ZHFD-...` 等占位标签后，ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.18% top-1 accuracy。提交 schema 已确认：从 `/saisdata/13/eval/images/{图片ID}.png` 读取，输出 `/saisresult/prediction.json`，结构为 `{image_id: [{"bbox": [x,y,w,h], "text": "字"}]}`。AutoDL `/app` 已更新新版推理入口，并用正式目录结构 + 真实整页训练图做过 smoke，能输出 bbox/text 列表。当前正在走 A 路线：补 Dockerfile/requirements/.dockerignore，用 `models/best.pt` 构建可提交镜像；检测器仍是传统前景连通域 baseline，提交前还应做 Docker smoke。
 
 ---
 
@@ -59,7 +59,7 @@
 | 训练数据 | 已下载并解压 | 保留原始压缩包，使用 `/root/autodl-tmp/datasets/train/` |
 | 数据格式 | 已完成首轮统计 | 使用 `char_crops_384` 跑 baseline，坏框后续再清洗 |
 | 评价指标 | 待确认 | 从赛题页面或提交反馈确认 |
-| 提交格式 | 部分确认 | 镜像运行路径已确认，`prediction.json` 内部 schema 待确认 |
+| 提交格式 | 已确认 | 镜像运行路径和 `prediction.json` 内部 schema 均已确认 |
 
 ---
 
@@ -107,7 +107,7 @@ expNNN_{stage}_{method}_{shortname}/
 ## 7. 下一次开工清单
 
 1. 根据 smoke 速度评估传统连通域检测是否够用；若不够，接 PaddleOCR/DB 检测器或训练检测头。
-2. 准备 Tianchi/阿里云镜像构建文件，确保 `/app/run.sh`、`/app/04-code`、`/app/best.pt` 进入镜像。
+2. 在 AutoDL 或 Tianchi/阿里云镜像构建环境执行 Docker build，确保 `/app/run.sh`、`/app/04-code`、`/app/best.pt` 进入镜像。
 3. 镜像提交前用 `/saisdata/13/eval/images/` 结构再做一次完整 smoke。
 4. 基于 ImageNet ResNet50 baseline 尝试 ConvNeXt/更强增强/类别重采样。
 5. 单独分析 14,820 个坏框是否能通过图片版本、坐标系或标注规则修复。
