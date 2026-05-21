@@ -8,7 +8,7 @@
 
 ## 0. 一句话现状
 
-**2026-05-21 03:36**：项目骨架和数据处理代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop、3,530 类，另有 14,820 个坏框写入 `errors.jsonl`。下一步是验证集切分和监督分类 baseline。
+**2026-05-22**：项目骨架和数据处理代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop、3,530 类，另有 14,820 个坏框写入 `errors.jsonl`。`exp002_supervised_resnet50_aug` 的 split 脚本和训练入口已写好，等待 AutoDL 开机后生成 split 并跑 1 epoch smoke。
 
 ---
 
@@ -102,7 +102,8 @@ expNNN_{stage}_{method}_{shortname}/
 
 ## 7. 下一次开工清单
 
-1. 基于 `/root/autodl-tmp/datasets/processed/char_crops_384/manifest.jsonl` 做验证集切分策略。
-2. 创建 `exp002_supervised_resnet50_aug` 或同等级监督分类 smoke。
-3. 跑通训练、验证、推理和提交文件生成。
-4. 单独分析 14,820 个坏框是否能通过图片版本、坐标系或标注规则修复。
+1. AutoDL 开机后拉取最新代码：`cd /root/autodl-tmp/projects/ancient-script-fewshot-recognition- && git pull --ff-only`。
+2. 运行 `ancient_ocr.data.split_manifest` 生成 `/root/autodl-tmp/datasets/processed/char_crops_384/splits/seed42_valid10`。
+3. 跑 `exp002_supervised_resnet50_aug` 的 1 epoch smoke。
+4. 根据 smoke 速度和显存，决定是否跑 5 epoch full baseline。
+5. 单独分析 14,820 个坏框是否能通过图片版本、坐标系或标注规则修复。

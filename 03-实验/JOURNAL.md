@@ -46,6 +46,38 @@
 
 ---
 
+## 2026-05-22 — exp002_supervised_resnet50_aug
+
+**Verdict：Pending**
+
+已补训练/验证切分脚本和 ResNet50 训练入口，等待 AutoDL 开机后跑真实数据 smoke。
+
+### 设置
+
+- 数据：`/root/autodl-tmp/datasets/processed/char_crops_384`
+- 模型：ResNet50
+- 关键超参：224 输入，batch size 64，AdamW，lr 1e-3
+- 验证集：计划使用 `splits/seed42_valid10`
+
+### 结果
+
+- 本地指标：21 个单元测试通过
+- 线上分数：无
+- 训练现象：待跑
+
+### 解释
+
+- 单样本类别只进训练集，避免验证集中出现训练完全没见过的类别。
+- smoke 先使用 `weights=none`，减少首次运行对外网下载预训练权重的依赖。
+
+### 下一步
+
+- AutoDL 开机后拉取最新代码。
+- 生成 split 并跑 1 epoch smoke。
+- 根据 smoke 速度和显存，决定是否跑 5 epoch full baseline。
+
+---
+
 ## 日志模板
 
 ```markdown

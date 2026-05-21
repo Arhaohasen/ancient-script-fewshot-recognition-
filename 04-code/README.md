@@ -1,6 +1,6 @@
 # 04-code
 
-这里放比赛代码。当前先不急着实现，等数据格式确认后再创建具体脚本。
+这里放比赛代码。当前已经有数据裁剪、统计、切分和第一版监督分类训练入口。
 
 ---
 
@@ -8,18 +8,17 @@
 
 ```text
 04-code/
-├── data/       # Dataset、数据清洗、切分、统计
-├── models/     # 模型定义
-├── training/   # 训练脚本、loss、scheduler
-├── inference/  # 推理与提交文件生成
-└── utils/      # 通用工具
+├── ancient_ocr/
+│   ├── data/       # XML 解析、crop 构建、manifest 统计、split
+│   └── training/   # 监督分类训练入口
+└── tests/          # 单元测试
 ```
 
 ---
 
 ## 第一版代码目标
 
-`exp001_baseline_pipeline_smoke` 只要求：
+第一阶段代码目标：
 
 1. 能读取训练图片和标签；
 2. 能构造训练/验证切分；
@@ -33,9 +32,9 @@
 
 - Python
 - PyTorch
-- torchvision / timm（待确认是否安装和允许）
+- torchvision
 - pandas / numpy
-- PIL / OpenCV
+- PIL
 
 ---
 
