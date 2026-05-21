@@ -113,7 +113,7 @@ def detect_candidate_boxes(
     image: Image.Image,
     *,
     min_area: int = 64,
-    max_boxes: int = 256,
+    max_boxes: int = 128,
     pad: int = 4,
     max_detection_side: int = 1200,
 ) -> list[list[int]]:
@@ -137,9 +137,14 @@ def detect_candidate_boxes(
     for left, top, right, bottom, area in components:
         width = right - left
         height = bottom - top
+        box_area = width * height
         if area < scaled_min_area:
             continue
         if area > image_area * 0.25:
+            continue
+        if box_area > image_area * 0.08:
+            continue
+        if width > gray.shape[1] * 0.65 or height > gray.shape[0] * 0.65:
             continue
         if width < 3 or height < 3:
             continue

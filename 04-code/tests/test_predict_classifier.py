@@ -92,6 +92,21 @@ class PredictClassifierTests(unittest.TestCase):
         self.assertGreaterEqual(boxes[0][2], 12)
         self.assertGreaterEqual(boxes[0][3], 10)
 
+    def test_detect_candidate_boxes_filters_page_sized_components(self):
+        image = Image.new("L", (100, 100), "white")
+        pixels = image.load()
+        for y in range(5, 95):
+            pixels[5, y] = 0
+        for y in range(40, 50):
+            for x in range(60, 70):
+                pixels[x, y] = 0
+
+        boxes = detect_candidate_boxes(image, min_area=20, max_boxes=10)
+
+        self.assertEqual(len(boxes), 1)
+        self.assertGreaterEqual(boxes[0][0], 55)
+        self.assertLessEqual(boxes[0][0], 60)
+
     def test_writes_utf8_prediction_json(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "prediction.json"
