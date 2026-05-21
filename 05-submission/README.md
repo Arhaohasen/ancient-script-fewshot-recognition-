@@ -36,6 +36,18 @@ docker build -t ancient-script-submit:exp002 .
 
 截至 2026-05-22，当前 AutoDL 训练容器内没有 `docker` 命令；若继续用这台训练机，需要把仓库和 `models/best.pt` 交给 Tianchi/阿里云镜像构建器或另一台有 Docker 的机器构建。
 
+当前已推送到阿里云 ACR 的镜像：
+
+```text
+crpi-zu9shlvlgvipgjet.cn-hangzhou.personal.cr.aliyuncs.com/ancient-script/ancient-script-submit:exp002
+```
+
+digest：
+
+```text
+sha256:48e280caca415daca1765176443fa5f5e9fea5bd27dd1e8b6c669eef341a6fd3
+```
+
 本地或 AutoDL smoke：
 
 ```bash
