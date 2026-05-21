@@ -48,33 +48,36 @@
 
 ## 2026-05-22 — exp002_supervised_resnet50_aug
 
-**Verdict：Pending**
+**Verdict：Positive**
 
-已补训练/验证切分脚本和 ResNet50 训练入口，等待 AutoDL 开机后跑真实数据 smoke。
+已跑通 ResNet50 监督分类 baseline。无预训练 5 epoch 验证准确率 5.21%；ImageNet 预训练 5 epoch 验证准确率 32.21%，作为后续实验的第一版本地基线。
 
 ### 设置
 
 - 数据：`/root/autodl-tmp/datasets/processed/char_crops_384`
 - 模型：ResNet50
-- 关键超参：224 输入，batch size 64，AdamW，lr 1e-3
-- 验证集：计划使用 `splits/seed42_valid10`
+- 关键超参：224 输入，batch size 64，AdamW，`none` lr 1e-3，`imagenet` lr 3e-4
+- 验证集：`splits/seed42_valid10`
 
 ### 结果
 
 - 本地指标：21 个单元测试通过
 - 线上分数：无
-- 训练现象：待跑
+- split：train 41,244，valid 5,184，valid 覆盖 1,773 类
+- no-pretrain：best epoch 5，valid acc 5.21%
+- imagenet：best epoch 5，train acc 46.18%，valid acc 32.21%
 
 ### 解释
 
 - 单样本类别只进训练集，避免验证集中出现训练完全没见过的类别。
-- smoke 先使用 `weights=none`，减少首次运行对外网下载预训练权重的依赖。
+- ImageNet 预训练对古文字 crop 仍然非常有帮助，说明底层纹理/边缘特征迁移有效。
+- 当前验证集来自同一批 crop 的类内切分，不代表线上跨域泛化能力，只能作为内部迭代对照。
 
 ### 下一步
 
-- AutoDL 开机后拉取最新代码。
-- 生成 split 并跑 1 epoch smoke。
-- 根据 smoke 速度和显存，决定是否跑 5 epoch full baseline。
+- 补推理与 `prediction.json` 生成脚本。
+- 确认赛题测试集/提交格式。
+- 基于 ImageNet baseline 尝试 ConvNeXt/更强增强/类别重采样。
 
 ---
 

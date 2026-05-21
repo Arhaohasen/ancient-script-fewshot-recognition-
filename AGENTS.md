@@ -8,7 +8,7 @@
 
 ## 0. 一句话现状
 
-**2026-05-22**：项目骨架和数据处理代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop、3,530 类，另有 14,820 个坏框写入 `errors.jsonl`。`exp002_supervised_resnet50_aug` 的 split 脚本和训练入口已写好，等待 AutoDL 开机后生成 split 并跑 1 epoch smoke。
+**2026-05-22**：项目骨架和数据处理/训练代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop、3,530 类。`exp002_supervised_resnet50_aug` 已跑通：ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.21% top-1 accuracy。下一步是确认测试集/提交格式，并补推理与 `prediction.json` 生成脚本。
 
 ---
 
@@ -102,8 +102,8 @@ expNNN_{stage}_{method}_{shortname}/
 
 ## 7. 下一次开工清单
 
-1. AutoDL 开机后拉取最新代码：`cd /root/autodl-tmp/projects/ancient-script-fewshot-recognition- && git pull --ff-only`。
-2. 运行 `ancient_ocr.data.split_manifest` 生成 `/root/autodl-tmp/datasets/processed/char_crops_384/splits/seed42_valid10`。
-3. 跑 `exp002_supervised_resnet50_aug` 的 1 epoch smoke。
-4. 根据 smoke 速度和显存，决定是否跑 5 epoch full baseline。
+1. 确认赛题测试集位置、提交格式和评价字段。
+2. 补推理脚本：读取 checkpoint、对测试图片/crop 预测、输出 UTF-8 `prediction.json`。
+3. 如果暂无测试集，先基于 valid split 做离线推理 smoke，确保 label 解码正确。
+4. 基于 ImageNet ResNet50 baseline 尝试 ConvNeXt/更强增强/类别重采样。
 5. 单独分析 14,820 个坏框是否能通过图片版本、坐标系或标注规则修复。
