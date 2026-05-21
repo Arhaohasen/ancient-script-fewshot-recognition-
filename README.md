@@ -58,3 +58,77 @@
 1. 将 `/root/autodl-tmp/runs/exp002_supervised_resnet50_imagenet_filtered_full/best.pt` 复制为 `models/best.pt`。
 2. 构建 `ancient-script-submit:exp002` Docker 镜像并用 `/saisdata/13/eval/images/` 结构 smoke。
 3. 若镜像链路无误，提交一次流程 baseline；随后再优化检测器和识别模型。
+
+---
+
+## 初赛镜像提交说明
+
+### 运行环境
+
+当前提交镜像基于：
+
+| 项 | 版本 |
+|---|---|
+| Base image | `pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime` |
+| OS | Ubuntu / Linux runtime from PyTorch image |
+| Python | 3.11 |
+| CUDA | 12.4 |
+| cuDNN | 9 |
+| PyTorch | 2.5.1 |
+| 关键依赖 | `numpy>=1.24`, `Pillow>=10.0`, `torchvision` from base image |
+
+本地在 Apple Silicon Mac 构建时需要指定 `--platform linux/amd64`，以适配赛方 Linux + NVIDIA GPU 环境。
+
+### 推理入口
+
+镜像启动后自动执行：
+
+```text
+/app/run.sh
+```
+
+默认路径：
+
+| 路径 | 用途 |
+|---|---|
+| `/saisdata/13/eval/images/` | 读取评测 PNG 图片 |
+| `/app/04-code/` | 推理代码 |
+| `/app/best.pt` | 模型权重 |
+| `/saisresult/prediction.json` | 输出结果 |
+
+输出 JSON 为 UTF-8 编码，顶层结构为 `{image_id: [{"bbox": [x, y, w, h], "text": "..."}]}`。若某张图没有检测结果，会保留该 `image_id` 并写空列表。
+
+### 模型方案
+
+当前镜像是流程 baseline：
+
+1. 用传统前景连通域方法从整页图片中生成候选字符框。
+2. 将候选框裁剪并缩放到分类器输入尺寸。
+3. 使用 ImageNet 预训练 ResNet50 微调得到的古文字字符分类器识别单字。
+4. 将检测框和识别文本按赛方格式写入 `prediction.json`。
+
+当前候选 checkpoint：
+
+```text
+/app/best.pt
+```
+
+对应训练产物：
+
+```text
+/root/autodl-tmp/runs/exp002_supervised_resnet50_imagenet_filtered_full/best.pt
+```
+
+训练数据来自赛方初赛训练集。训练时过滤 `None`、空标签、`ZH-` / `ZHFD-` 等无法映射到有效 Unicode 码点的占位标签。
+
+### 训练方式
+
+- 从赛方 XML 标注中解析字符框和 Unicode 文本标签。
+- 裁剪字符图，构建 `char_crops_384` 数据集。
+- 使用确定性 seed 切分训练/验证集。
+- 用 ImageNet 预训练 ResNet50 做监督微调。
+- 当前记录的内部验证集 top-1 accuracy：32.18%。
+
+### 外部数据
+
+当前 baseline 未使用额外标注数据。模型初始化使用 torchvision/ImageNet 预训练权重；正式推理不依赖公网下载模型、数据或代码，所需代码和权重均打包在 Docker 镜像内。

@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY 04-code/ /app/04-code/
 COPY run.sh /app/run.sh
+COPY README.md /app/README.md
 COPY models/best.pt /app/best.pt
 
 RUN chmod +x /app/run.sh && mkdir -p /saisresult
