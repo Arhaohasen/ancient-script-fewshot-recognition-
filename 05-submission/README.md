@@ -2,6 +2,13 @@
 
 这里放提交相关文件和记录。真正提交前先看 `00-赛题资料/提交流程.md`。
 
+当前赛方要求是镜像提交：
+
+- `/app/run.sh`：运行入口；
+- `/saisdata`：输入数据目录；
+- `/saisresult/prediction.json`：固定输出文件；
+- 截止时间：2026-05-27 14:00:00。
+
 ---
 
 ## 目录
@@ -14,16 +21,16 @@
 
 ---
 
-## 文件命名
+## 本地调试文件命名
 
 ```text
-submit_YYYYMMDD_HHMM_expNNN_shortname.csv
+prediction_YYYYMMDD_HHMM_expNNN_shortname.json
 ```
 
-如果赛方要求 zip 或其他格式，按赛方格式补充：
+镜像内最终文件名必须是：
 
 ```text
-submit_YYYYMMDD_HHMM_expNNN_shortname.zip
+/saisresult/prediction.json
 ```
 
 ---

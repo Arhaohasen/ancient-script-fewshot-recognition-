@@ -59,13 +59,17 @@
 | 训练数据 | 已下载并解压 | 保留原始压缩包，使用 `/root/autodl-tmp/datasets/train/` |
 | 数据格式 | 已完成首轮统计 | 使用 `char_crops_384` 跑 baseline，坏框后续再清洗 |
 | 评价指标 | 待确认 | 从赛题页面或提交反馈确认 |
-| 提交格式 | 待确认 | 补 `00-赛题资料/提交流程.md` |
+| 提交格式 | 部分确认 | 镜像运行路径已确认，`prediction.json` 内部 schema 待确认 |
 
 ---
 
 ## 4.1 已确认赛方规则
 
 - `prediction.json` 提交文件必须使用 UTF-8 编码。
+- 镜像提交入口必须为 `/app/run.sh`。
+- 选手程序必须从 `/saisdata` 读取输入数据集。
+- 输出结果必须写到 `/saisresult/prediction.json`。
+- 镜像提交截止时间为 2026-05-27 14:00:00。
 - UTF-8 可以表示全部 Unicode 字符，不存在“某些字符只能用 UTF-16 编码”的问题。
 - XML 标签或古文字在编辑器中显示成乱码/方块，通常是本地字体或编辑器缺字导致；只要程序能正确解析为有效 Unicode 码点，就属于正常数据，可用于训练。
 - `ZH-` 开头字符串、`None` 等属于标注时无法映射到标准 Unicode 的占位符或异常值，不是有效 Unicode 码点，应直接过滤。
@@ -102,8 +106,8 @@ expNNN_{stage}_{method}_{shortname}/
 
 ## 7. 下一次开工清单
 
-1. 确认赛题测试集位置、提交格式和评价字段。
-2. 补推理脚本：读取 checkpoint、对测试图片/crop 预测、输出 UTF-8 `prediction.json`。
+1. 确认 `prediction.json` 内部 schema：列表/字典/字段名，以及测试样本 ID 来源。
+2. 补 `/app/run.sh` 兼容入口和推理脚本：读取 checkpoint、从 `/saisdata` 预测、输出 UTF-8 `/saisresult/prediction.json`。
 3. 如果暂无测试集，先基于 valid split 做离线推理 smoke，确保 label 解码正确。
 4. 基于 ImageNet ResNet50 baseline 尝试 ConvNeXt/更强增强/类别重采样。
 5. 单独分析 14,820 个坏框是否能通过图片版本、坐标系或标注规则修复。
