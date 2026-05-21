@@ -8,7 +8,7 @@
 
 ## 0. 一句话现状
 
-**2026-05-22**：项目骨架和数据处理/训练/推理入口代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop。`exp002_supervised_resnet50_aug` 已跑通：过滤 `ZHFD-...` 等占位标签后，ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.18% top-1 accuracy。AutoDL `/app` 已准备好 `run.sh`、`04-code/`、`best.pt`，并用默认 `/saisdata -> /saisresult/prediction.json` 路径做过 8 张图片推理 smoke。下一步是确认 `prediction.json` 内部 schema 和测试样本 ID 来源。
+**2026-05-22**：项目骨架和数据处理/训练/推理入口代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop。`exp002_supervised_resnet50_aug` 已跑通：过滤 `ZHFD-...` 等占位标签后，ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.18% top-1 accuracy。提交 schema 已确认：从 `/saisdata/13/eval/images/{图片ID}.png` 读取，输出 `/saisresult/prediction.json`，结构为 `{image_id: [{"bbox": [x,y,w,h], "text": "字"}]}`。下一步是在 AutoDL `/app` 更新新版推理入口并用真实整页图片 smoke。
 
 ---
 
@@ -106,8 +106,8 @@ expNNN_{stage}_{method}_{shortname}/
 
 ## 7. 下一次开工清单
 
-1. 确认 `prediction.json` 内部 schema：列表/字典/字段名，以及测试样本 ID 来源。
-2. 补 `/app/run.sh` 兼容入口和推理脚本：读取 checkpoint、从 `/saisdata` 预测、输出 UTF-8 `/saisresult/prediction.json`。
-3. 如果暂无测试集，先基于 valid split 做离线推理 smoke，确保 label 解码正确。
+1. AutoDL `/app` 更新新版推理入口和 `run.sh`。
+2. 用 `/saisdata/13/eval/images/` 结构和真实整页训练图做 smoke，确认输出 bbox/text schema。
+3. 根据 smoke 速度评估传统连通域检测是否够用；若不够，接 PaddleOCR/DB 检测器或训练检测头。
 4. 基于 ImageNet ResNet50 baseline 尝试 ConvNeXt/更强增强/类别重采样。
 5. 单独分析 14,820 个坏框是否能通过图片版本、坐标系或标注规则修复。

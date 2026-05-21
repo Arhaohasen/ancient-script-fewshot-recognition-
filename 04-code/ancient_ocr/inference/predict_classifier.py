@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
+import numpy as np
 from PIL import Image, ImageOps
 
 
@@ -16,27 +17,40 @@ IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"}
 class InputImage:
     path: Path
     relative_path: str
+    image_id: str
+
+
+def resolve_image_dir(input_dir: str | Path) -> Path:
+    root = Path(input_dir)
+    sais_eval_dir = root / "13" / "eval" / "images"
+    if sais_eval_dir.exists():
+        return sais_eval_dir
+    return root
 
 
 def find_input_images(input_dir: str | Path) -> list[InputImage]:
-    root = Path(input_dir)
+    root = resolve_image_dir(input_dir)
     images: list[InputImage] = []
     for path in sorted(root.rglob("*")):
         if path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES:
-            images.append(InputImage(path=path, relative_path=path.relative_to(root).as_posix()))
+            images.append(
+                InputImage(
+                    path=path,
+                    relative_path=path.relative_to(root).as_posix(),
+                    image_id=path.stem,
+                )
+            )
     return images
 
 
 def build_prediction_payload(
     *,
-    predictions: Iterable[tuple[str, str]],
+    predictions: Iterable[tuple[str, list[dict[str, Any]]]],
     schema: str,
 ) -> Any:
     items = list(predictions)
-    if schema == "mapping":
-        return {image_id: label for image_id, label in items}
-    if schema == "records":
-        return [{"image_id": image_id, "prediction": label} for image_id, label in items]
+    if schema == "sais":
+        return {image_id: detections for image_id, detections in items}
     raise ValueError(f"unsupported prediction schema: {schema}")
 
 
@@ -48,6 +62,102 @@ def write_prediction_json(path: str | Path, payload: Any) -> None:
         encoding="utf-8",
     )
     json.loads(output_path.read_text(encoding="utf-8"))
+
+
+def _foreground_mask(gray: np.ndarray) -> np.ndarray:
+    median = float(np.median(gray))
+    q20 = float(np.percentile(gray, 20))
+    q80 = float(np.percentile(gray, 80))
+    if median < 128:
+        mask = gray >= max(q80, median + 20)
+    else:
+        mask = gray <= min(q20, median - 20)
+
+    ratio = float(mask.mean())
+    if ratio < 0.001 or ratio > 0.55:
+        diff = np.abs(gray.astype(np.int16) - int(median))
+        threshold = max(20, float(np.percentile(diff, 85)))
+        mask = diff >= threshold
+    return mask
+
+
+def _connected_components_numpy(mask: np.ndarray) -> list[tuple[int, int, int, int, int]]:
+    height, width = mask.shape
+    visited = np.zeros(mask.shape, dtype=bool)
+    components: list[tuple[int, int, int, int, int]] = []
+    ys, xs = np.nonzero(mask)
+    for start_y, start_x in zip(ys.tolist(), xs.tolist()):
+        if visited[start_y, start_x]:
+            continue
+        stack = [(start_x, start_y)]
+        visited[start_y, start_x] = True
+        min_x = max_x = start_x
+        min_y = max_y = start_y
+        area = 0
+        while stack:
+            x, y = stack.pop()
+            area += 1
+            min_x = min(min_x, x)
+            max_x = max(max_x, x)
+            min_y = min(min_y, y)
+            max_y = max(max_y, y)
+            for next_x, next_y in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                if 0 <= next_x < width and 0 <= next_y < height and mask[next_y, next_x] and not visited[next_y, next_x]:
+                    visited[next_y, next_x] = True
+                    stack.append((next_x, next_y))
+        components.append((min_x, min_y, max_x + 1, max_y + 1, area))
+    return components
+
+
+def detect_candidate_boxes(
+    image: Image.Image,
+    *,
+    min_area: int = 64,
+    max_boxes: int = 256,
+    pad: int = 4,
+    max_detection_side: int = 1200,
+) -> list[list[int]]:
+    original_width, original_height = image.size
+    scale = 1.0
+    working = image.convert("L")
+    longest_side = max(original_width, original_height)
+    if longest_side > max_detection_side:
+        scale = max_detection_side / longest_side
+        working = working.resize(
+            (max(1, round(original_width * scale)), max(1, round(original_height * scale))),
+            Image.Resampling.BILINEAR,
+        )
+
+    gray = np.array(working)
+    mask = _foreground_mask(gray)
+    components = _connected_components_numpy(mask)
+    scaled_min_area = max(4, round(min_area * scale * scale))
+    image_area = gray.shape[0] * gray.shape[1]
+    candidates: list[tuple[int, int, int, int, int]] = []
+    for left, top, right, bottom, area in components:
+        width = right - left
+        height = bottom - top
+        if area < scaled_min_area:
+            continue
+        if area > image_area * 0.25:
+            continue
+        if width < 3 or height < 3:
+            continue
+        candidates.append((left, top, right, bottom, area))
+
+    candidates.sort(key=lambda item: (item[1], item[0], -item[4]))
+    boxes: list[list[int]] = []
+    for left, top, right, bottom, _ in candidates[:max_boxes]:
+        x1 = max(0, int((left - pad) / scale))
+        y1 = max(0, int((top - pad) / scale))
+        x2 = min(original_width, int((right + pad) / scale))
+        y2 = min(original_height, int((bottom + pad) / scale))
+        if x2 > x1 and y2 > y1:
+            boxes.append([x1, y1, x2 - x1, y2 - y1])
+
+    if not boxes:
+        boxes.append([0, 0, original_width, original_height])
+    return boxes
 
 
 def _build_valid_transform(image_size: int):
@@ -77,9 +187,8 @@ def predict_images(
     input_dir: str | Path,
     checkpoint_path: str | Path,
     batch_size: int = 128,
-) -> list[tuple[str, str]]:
+) -> list[tuple[str, list[dict[str, Any]]]]:
     import torch
-    from torch.utils.data import DataLoader, Dataset
 
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     index_to_label = [str(label) for label in checkpoint["index_to_label"]]
@@ -88,35 +197,35 @@ def predict_images(
     transform = _build_valid_transform(image_size)
     images = find_input_images(input_dir)
 
-    class _ImageDataset(Dataset):
-        def __len__(self) -> int:
-            return len(images)
-
-        def __getitem__(self, index: int):
-            item = images[index]
-            with Image.open(item.path) as image:
-                tensor = transform(image)
-            return tensor, item.relative_path
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = _build_model(config, num_classes=len(index_to_label))
     model.load_state_dict(checkpoint["model"])
     model.to(device)
     model.eval()
 
-    loader = DataLoader(
-        _ImageDataset(),
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=0,
-        pin_memory=device.type == "cuda",
-    )
-    predictions: list[tuple[str, str]] = []
+    predictions: list[tuple[str, list[dict[str, Any]]]] = []
     with torch.no_grad():
-        for batch, relative_paths in loader:
-            logits = model(batch.to(device, non_blocking=True))
-            indices = logits.argmax(dim=1).cpu().tolist()
-            predictions.extend((relative_path, index_to_label[index]) for relative_path, index in zip(relative_paths, indices))
+        for item in images:
+            with Image.open(item.path) as image:
+                image = image.convert("RGB")
+                boxes = detect_candidate_boxes(image)
+                detections: list[dict[str, Any]] = []
+                for start in range(0, len(boxes), batch_size):
+                    chunk = boxes[start : start + batch_size]
+                    tensors = []
+                    for x, y, width, height in chunk:
+                        crop = image.crop((x, y, x + width, y + height))
+                        tensors.append(transform(crop))
+                    batch = torch.stack(tensors).to(device, non_blocking=True)
+                    indices = model(batch).argmax(dim=1).cpu().tolist()
+                    detections.extend(
+                        {
+                            "bbox": [int(x), int(y), int(width), int(height)],
+                            "text": index_to_label[index],
+                        }
+                        for (x, y, width, height), index in zip(chunk, indices)
+                    )
+                predictions.append((item.image_id, detections))
     return predictions
 
 
@@ -128,9 +237,9 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument(
         "--schema",
-        default="mapping",
-        choices=["mapping", "records"],
-        help="Temporary output schema until official prediction.json fields are confirmed.",
+        default="sais",
+        choices=["sais"],
+        help="Output schema required by the competition: image_id -> list of bbox/text detections.",
     )
     args = parser.parse_args()
 
