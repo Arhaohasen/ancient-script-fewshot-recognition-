@@ -81,6 +81,20 @@ def _foreground_mask(gray: np.ndarray) -> np.ndarray:
     return mask
 
 
+def _connected_components_cv2(mask: np.ndarray) -> list[tuple[int, int, int, int, int]] | None:
+    try:
+        import cv2  # type: ignore[import-not-found]
+    except ImportError:
+        return None
+
+    count, _, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), connectivity=4)
+    components: list[tuple[int, int, int, int, int]] = []
+    for index in range(1, count):
+        left, top, width, height, area = stats[index]
+        components.append((int(left), int(top), int(left + width), int(top + height), int(area)))
+    return components
+
+
 def _connected_components_numpy(mask: np.ndarray) -> list[tuple[int, int, int, int, int]]:
     height, width = mask.shape
     visited = np.zeros(mask.shape, dtype=bool)
@@ -109,13 +123,17 @@ def _connected_components_numpy(mask: np.ndarray) -> list[tuple[int, int, int, i
     return components
 
 
+def _connected_components(mask: np.ndarray) -> list[tuple[int, int, int, int, int]]:
+    return _connected_components_cv2(mask) or _connected_components_numpy(mask)
+
+
 def detect_candidate_boxes(
     image: Image.Image,
     *,
     min_area: int = 64,
-    max_boxes: int = 128,
+    max_boxes: int = 64,
     pad: int = 4,
-    max_detection_side: int = 1200,
+    max_detection_side: int = 800,
 ) -> list[list[int]]:
     original_width, original_height = image.size
     scale = 1.0
@@ -130,7 +148,7 @@ def detect_candidate_boxes(
 
     gray = np.array(working)
     mask = _foreground_mask(gray)
-    components = _connected_components_numpy(mask)
+    components = _connected_components(mask)
     scaled_min_area = max(4, round(min_area * scale * scale))
     image_area = gray.shape[0] * gray.shape[1]
     candidates: list[tuple[int, int, int, int, int]] = []
@@ -192,10 +210,13 @@ def predict_images(
     input_dir: str | Path,
     checkpoint_path: str | Path,
     batch_size: int = 128,
+    max_boxes: int = 64,
+    max_detection_side: int = 800,
+    progress_interval: int = 25,
 ) -> list[tuple[str, list[dict[str, Any]]]]:
     import torch
 
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     index_to_label = [str(label) for label in checkpoint["index_to_label"]]
     config = checkpoint.get("config", {})
     image_size = int(config.get("image_size", 224))
@@ -210,10 +231,15 @@ def predict_images(
 
     predictions: list[tuple[str, list[dict[str, Any]]]] = []
     with torch.no_grad():
-        for item in images:
+        total_images = len(images)
+        for image_index, item in enumerate(images, start=1):
             with Image.open(item.path) as image:
                 image = image.convert("RGB")
-                boxes = detect_candidate_boxes(image)
+                boxes = detect_candidate_boxes(
+                    image,
+                    max_boxes=max_boxes,
+                    max_detection_side=max_detection_side,
+                )
                 detections: list[dict[str, Any]] = []
                 for start in range(0, len(boxes), batch_size):
                     chunk = boxes[start : start + batch_size]
@@ -231,27 +257,56 @@ def predict_images(
                         for (x, y, width, height), index in zip(chunk, indices)
                     )
                 predictions.append((item.image_id, detections))
+            if progress_interval > 0 and (image_index == 1 or image_index % progress_interval == 0 or image_index == total_images):
+                print(
+                    json.dumps(
+                        {
+                            "processed": image_index,
+                            "total": total_images,
+                            "last_image_id": item.image_id,
+                            "detections": len(detections),
+                        },
+                        ensure_ascii=False,
+                    ),
+                    flush=True,
+                )
     return predictions
 
 
-def main() -> None:
+def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run classifier inference and write prediction.json.")
     parser.add_argument("--input-dir", default="/saisdata", help="Input data directory.")
     parser.add_argument("--checkpoint", required=True, help="Path to model checkpoint.")
     parser.add_argument("--output", default="/saisresult/prediction.json", help="Output prediction.json path.")
     parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--max-boxes", type=int, default=64, help="Maximum candidate boxes per image.")
+    parser.add_argument(
+        "--max-detection-side",
+        type=int,
+        default=800,
+        help="Resize the longest side to this value for foreground connected-component detection.",
+    )
+    parser.add_argument("--progress-interval", type=int, default=25, help="Print progress every N images. Use 0 to disable.")
     parser.add_argument(
         "--schema",
         default="sais",
         choices=["sais"],
         help="Output schema required by the competition: image_id -> list of bbox/text detections.",
     )
+    return parser
+
+
+def main() -> None:
+    parser = build_arg_parser()
     args = parser.parse_args()
 
     predictions = predict_images(
         input_dir=args.input_dir,
         checkpoint_path=args.checkpoint,
         batch_size=args.batch_size,
+        max_boxes=args.max_boxes,
+        max_detection_side=args.max_detection_side,
+        progress_interval=args.progress_interval,
     )
     payload = build_prediction_payload(predictions=predictions, schema=args.schema)
     write_prediction_json(args.output, payload)

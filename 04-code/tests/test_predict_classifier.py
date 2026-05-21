@@ -12,6 +12,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from ancient_ocr.inference.predict_classifier import (  # noqa: E402
+    build_arg_parser,
     build_prediction_payload,
     detect_candidate_boxes,
     find_input_images,
@@ -116,6 +117,26 @@ class PredictClassifierTests(unittest.TestCase):
             loaded = json.loads(path.read_text(encoding="utf-8"))
 
         self.assertEqual(loaded, {"IMG001": [{"bbox": [1, 2, 3, 4], "text": "𢭃"}]})
+
+    def test_arg_parser_exposes_fast_inference_controls(self):
+        parser = build_arg_parser()
+
+        args = parser.parse_args(
+            [
+                "--checkpoint",
+                "/app/best.pt",
+                "--max-boxes",
+                "64",
+                "--max-detection-side",
+                "800",
+                "--progress-interval",
+                "25",
+            ]
+        )
+
+        self.assertEqual(args.max_boxes, 64)
+        self.assertEqual(args.max_detection_side, 800)
+        self.assertEqual(args.progress_interval, 25)
 
 
 if __name__ == "__main__":

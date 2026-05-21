@@ -7,6 +7,9 @@ SAIS_RESULT_DIR="${SAIS_RESULT_DIR:-/saisresult}"
 CHECKPOINT_PATH="${CHECKPOINT_PATH:-${APP_DIR}/best.pt}"
 PREDICTION_SCHEMA="${PREDICTION_SCHEMA:-sais}"
 BATCH_SIZE="${BATCH_SIZE:-128}"
+MAX_BOXES="${MAX_BOXES:-64}"
+MAX_DETECTION_SIDE="${MAX_DETECTION_SIDE:-800}"
+PROGRESS_INTERVAL="${PROGRESS_INTERVAL:-25}"
 
 mkdir -p "${SAIS_RESULT_DIR}"
 
@@ -28,4 +31,7 @@ python -m ancient_ocr.inference.predict_classifier \
   --checkpoint "${CHECKPOINT_PATH}" \
   --output "${SAIS_RESULT_DIR}/prediction.json" \
   --batch-size "${BATCH_SIZE}" \
+  --max-boxes "${MAX_BOXES}" \
+  --max-detection-side "${MAX_DETECTION_SIDE}" \
+  --progress-interval "${PROGRESS_INTERVAL}" \
   --schema "${PREDICTION_SCHEMA}"

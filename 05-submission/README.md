@@ -48,6 +48,18 @@ digest：
 sha256:48e280caca415daca1765176443fa5f5e9fea5bd27dd1e8b6c669eef341a6fd3
 ```
 
+快版镜像：
+
+```text
+crpi-zu9shlvlgvipgjet.cn-hangzhou.personal.cr.aliyuncs.com/ancient-script/ancient-script-submit:exp002-fast
+```
+
+digest：
+
+```text
+sha256:ed28d76ea568d42ce28123cb3ad08fa18c94d6885062f6b430a63594f280364b
+```
+
 本地或 AutoDL smoke：
 
 ```bash

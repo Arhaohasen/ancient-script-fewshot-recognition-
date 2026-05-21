@@ -8,7 +8,7 @@
 
 ## 0. 一句话现状
 
-**2026-05-22**：项目骨架和数据处理/训练/推理入口代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop。`exp002_supervised_resnet50_aug` 已跑通：过滤 `ZHFD-...` 等占位标签后，ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.18% top-1 accuracy。提交 schema 已确认：从 `/saisdata/13/eval/images/{图片ID}.png` 读取，输出 `/saisresult/prediction.json`，结构为 `{image_id: [{"bbox": [x,y,w,h], "text": "字"}]}`。本地 Docker 已构建并推送 `exp002` 镜像到阿里云 ACR：`crpi-zu9shlvlgvipgjet.cn-hangzhou.personal.cr.aliyuncs.com/ancient-script/ancient-script-submit:exp002`，digest 为 `sha256:48e280caca415daca1765176443fa5f5e9fea5bd27dd1e8b6c669eef341a6fd3`。下一步是在比赛页面填镜像路径提交，等待线上反馈；检测器仍是传统前景连通域 baseline。
+**2026-05-22**：项目骨架和数据处理/训练/推理入口代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop。`exp002_supervised_resnet50_aug` 已跑通：过滤 `ZHFD-...` 等占位标签后，ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.18% top-1 accuracy。提交 schema 已确认：从 `/saisdata/13/eval/images/{图片ID}.png` 读取，输出 `/saisresult/prediction.json`，结构为 `{image_id: [{"bbox": [x,y,w,h], "text": "字"}]}`。本地 Docker 已构建并推送 `exp002` 镜像到阿里云 ACR：`crpi-zu9shlvlgvipgjet.cn-hangzhou.personal.cr.aliyuncs.com/ancient-script/ancient-script-submit:exp002`。因 `exp002` 在线运行超过 30 分钟仍未完成，又准备并推送 `exp002-fast`：`crpi-zu9shlvlgvipgjet.cn-hangzhou.personal.cr.aliyuncs.com/ancient-script/ancient-script-submit:exp002-fast`，digest 为 `sha256:ed28d76ea568d42ce28123cb3ad08fa18c94d6885062f6b430a63594f280364b`。快版使用 OpenCV 连通域、64 个候选框、800 检测长边和进度日志。
 
 ---
 
@@ -107,7 +107,7 @@ expNNN_{stage}_{method}_{shortname}/
 ## 7. 下一次开工清单
 
 1. 根据 smoke 速度评估传统连通域检测是否够用；若不够，接 PaddleOCR/DB 检测器或训练检测头。
-2. 在比赛页面提交镜像路径：`crpi-zu9shlvlgvipgjet.cn-hangzhou.personal.cr.aliyuncs.com/ancient-script/ancient-script-submit:exp002`。
+2. 若 `exp002` 超时或长时间无结果，在比赛页面提交快版镜像路径：`crpi-zu9shlvlgvipgjet.cn-hangzhou.personal.cr.aliyuncs.com/ancient-script/ancient-script-submit:exp002-fast`。
 3. 记录线上分数和运行日志；若镜像运行失败，先修提交链路，若成功但分低，再优化检测器。
 4. 基于 ImageNet ResNet50 baseline 尝试 ConvNeXt/更强增强/类别重采样。
 5. 单独分析 14,820 个坏框是否能通过图片版本、坐标系或标注规则修复。
