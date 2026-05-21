@@ -8,7 +8,7 @@
 
 ## 0. 一句话现状
 
-**2026-05-22**：项目骨架和数据处理/训练代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop、3,530 类。`exp002_supervised_resnet50_aug` 已跑通：ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.21% top-1 accuracy。下一步是确认测试集/提交格式，并补推理与 `prediction.json` 生成脚本。
+**2026-05-22**：项目骨架和数据处理/训练/推理入口代码已推送到 GitHub 私有仓库，AutoDL 训练机已配置 1 张 RTX 4090。`train.tar` 已下载并解压，原始数据结构已统计；`exp001_baseline_pipeline_smoke` 已完成，`/root/autodl-tmp/datasets/processed/char_crops_384` 生成 46,428 张成功 crop。`exp002_supervised_resnet50_aug` 已跑通：过滤 `ZHFD-...` 等占位标签后，ImageNet 预训练 ResNet50 5 epoch 在内部验证集达到 32.18% top-1 accuracy。根目录 `run.sh` 已满足 `/app/run.sh` 入口形态，并在 AutoDL 做过 8 张图片推理 smoke。下一步是确认 `prediction.json` 内部 schema 和测试样本 ID 来源。
 
 ---
 

@@ -50,7 +50,7 @@
 
 **Verdict：Positive**
 
-已跑通 ResNet50 监督分类 baseline。无预训练 5 epoch 验证准确率 5.21%；ImageNet 预训练 5 epoch 验证准确率 32.21%，作为后续实验的第一版本地基线。
+已跑通 ResNet50 监督分类 baseline。无预训练 5 epoch 验证准确率 5.21%；ImageNet 预训练 5 epoch 验证准确率 32.21%。发现 `ZHFD-...` 占位标签后，重新过滤并训练 filtered 版本，验证准确率 32.18%，作为后续实验和提交推理的第一版本地基线。
 
 ### 设置
 
@@ -66,11 +66,14 @@
 - split：train 41,244，valid 5,184，valid 覆盖 1,773 类
 - no-pretrain：best epoch 5，valid acc 5.21%
 - imagenet：best epoch 5，train acc 46.18%，valid acc 32.21%
+- imagenet filtered：train 40,558，valid 5,109，2,999 类，valid acc 32.18%
+- run.sh smoke：8 张样本可生成 UTF-8 `prediction.json`，占位标签预测数 0
 
 ### 解释
 
 - 单样本类别只进训练集，避免验证集中出现训练完全没见过的类别。
 - ImageNet 预训练对古文字 crop 仍然非常有帮助，说明底层纹理/边缘特征迁移有效。
+- `ZHFD-...` 等 ASCII 占位标签会污染提交预测，已在 split 阶段过滤。
 - 当前验证集来自同一批 crop 的类内切分，不代表线上跨域泛化能力，只能作为内部迭代对照。
 
 ### 下一步

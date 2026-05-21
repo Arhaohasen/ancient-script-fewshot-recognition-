@@ -122,12 +122,18 @@ PYTHONPATH=04-code python -m ancient_ocr.training.train_classifier \
 | split valid records | 5,184 |
 | valid labels | 1,773 |
 | singleton train-only labels | 1,757 |
+| filtered split train records | 40,558 |
+| filtered split valid records | 5,109 |
+| filtered classes | 2,999 |
 | no-pretrain best epoch | 5 |
 | no-pretrain train loss / acc | 5.8133 / 5.04% |
 | no-pretrain valid loss / acc | 6.3685 / 5.21% |
 | imagenet best epoch | 5 |
 | imagenet train loss / acc | 2.4866 / 46.18% |
 | imagenet valid loss / acc | 4.7564 / 32.21% |
+| imagenet filtered best epoch | 5 |
+| imagenet filtered train loss / acc | 2.4243 / 47.09% |
+| imagenet filtered valid loss / acc | 4.6025 / 32.18% |
 | online score | 无 |
 
 ---
@@ -136,7 +142,7 @@ PYTHONPATH=04-code python -m ancient_ocr.training.train_classifier \
 
 **Verdict：Positive**
 
-训练闭环已跑通，ImageNet 预训练 ResNet50 在本地验证集上达到 32.21% top-1 accuracy，明显优于无预训练的 5.21%。当前验证集是从 crop 训练数据按类别切分出来的内部验证集，不等价于线上跨域测试，但足以作为后续模型/增强策略的本地对照基线。
+训练闭环已跑通，ImageNet 预训练 ResNet50 在本地验证集上达到 32.21% top-1 accuracy，明显优于无预训练的 5.21%。发现 `ZHFD-...` 占位标签后，重新过滤并训练 filtered 版本，valid acc 为 32.18%，基本不掉分，且推理 smoke 不再输出占位标签。当前验证集是从 crop 训练数据按类别切分出来的内部验证集，不等价于线上跨域测试，但足以作为后续模型/增强策略的本地对照基线。
 
 ---
 
@@ -148,3 +154,4 @@ PYTHONPATH=04-code python -m ancient_ocr.training.train_classifier \
 | smoke 日志/ckpt | `/root/autodl-tmp/runs/exp002_supervised_resnet50_aug_smoke` |
 | full 日志/ckpt | `/root/autodl-tmp/runs/exp002_supervised_resnet50_aug_full` |
 | imagenet full 日志/ckpt | `/root/autodl-tmp/runs/exp002_supervised_resnet50_imagenet_full` |
+| imagenet filtered full 日志/ckpt | `/root/autodl-tmp/runs/exp002_supervised_resnet50_imagenet_filtered_full` |
