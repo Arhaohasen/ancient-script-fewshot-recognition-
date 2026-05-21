@@ -7,6 +7,8 @@ from pathlib import Path
 import random
 from typing import Any
 
+from ancient_ocr.data.xml_crops import is_valid_label
+
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
@@ -50,7 +52,7 @@ def split_manifest(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    records = _read_jsonl(manifest_path)
+    records = [record for record in _read_jsonl(manifest_path) if is_valid_label(record.get("label"))]
     by_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
         by_label[record["label"]].append(record)

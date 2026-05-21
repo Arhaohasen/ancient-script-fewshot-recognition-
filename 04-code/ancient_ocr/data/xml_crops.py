@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from pathlib import Path
+import re
 import xml.etree.ElementTree as ET
 
 
@@ -30,6 +31,8 @@ def is_valid_label(label: str | None) -> bool:
     if value == "None":
         return False
     if value.startswith("ZH-"):
+        return False
+    if re.match(r"^[A-Za-z]+[-_]", value):
         return False
     return True
 

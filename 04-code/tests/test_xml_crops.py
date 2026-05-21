@@ -25,6 +25,7 @@ class XmlCropTests(unittest.TestCase):
         self.assertFalse(is_valid_label("   "))
         self.assertFalse(is_valid_label("None"))
         self.assertFalse(is_valid_label("ZH-12345"))
+        self.assertFalse(is_valid_label("ZHFD-1176-1528961428922"))
         self.assertTrue(is_valid_label("大"))
 
     def test_parses_semicolon_position_points(self):

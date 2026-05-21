@@ -57,6 +57,28 @@ class SplitManifestTests(unittest.TestCase):
         self.assertEqual([record["label"] for record in valid_records], ["pair"])
         self.assertIn("single", {record["label"] for record in train_records})
 
+    def test_filters_placeholder_labels_from_existing_manifest(self):
+        records = [
+            _record("甲", 1),
+            _record("甲", 2),
+            _record("ZHFD-1176-1528961428922", 1),
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest_path = root / "manifest.jsonl"
+            output_dir = root / "splits"
+            manifest_path.write_text(
+                "\n".join(json.dumps(record, ensure_ascii=False) for record in records) + "\n",
+                encoding="utf-8",
+            )
+
+            summary = split_manifest(manifest_path, output_dir=output_dir, valid_fraction=0.5, seed=7)
+
+            label_map = json.loads((output_dir / "label_to_index.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(summary["total_records"], 2)
+        self.assertEqual(label_map, {"甲": 0})
+
     def test_writes_label_map_from_all_train_labels(self):
         records = [
             _record("乙", 1),
